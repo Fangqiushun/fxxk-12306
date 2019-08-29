@@ -1,0 +1,16 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+requests = "*"
+pillow = "*"
+prettytable = "*"
+fake-useragent = {index = "https://pypi.tuna.tsinghua.edu.cn/simple",version = "*"}
+selenium = "*"
+
+[requires]
+python_version = "3.6"
