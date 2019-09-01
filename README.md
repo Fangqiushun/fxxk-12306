@@ -27,7 +27,9 @@ pipenv install
 # 查看帮助
 python run.py --help
 # 查询余票
-python run.py --search_ticket <train_date> <from_station> <to_station>
+python run.py --search_ticket <乘车日期> <出发站> <到达站>
+# 登录
+python run.py --login <账号> <密码>
 ```
 
 ## TODO

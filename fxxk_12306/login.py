@@ -3,21 +3,27 @@
 # @Time    : 2019/8/26 下午9:33
 # @Author  : Chilson
 # @Email   : qiushun_fang@126.com
-import requests
-from PIL import Image
-from prettytable import PrettyTable
-import base64
-from selenium import webdriver
+
+import os
 import time
 import json
+import base64
+import requests
+import urllib3
+from PIL import Image
+from prettytable import PrettyTable
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from config import config
 from fxxk_12306.logger import Logger
 
 logger = Logger('Login').get_logger()
+# 不展示不做验证请求接口的警告
+urllib3.disable_warnings()
 
 
 class Login:
-    """模拟登录12306.
+    """模拟登录.
     思路以及实现步骤：
         1、通过验证码
         2、更新cookies
@@ -41,8 +47,8 @@ class Login:
     def post(self, url, data=None):
         return self.session.post(url=url, data=data, headers=self.headers, verify=False)
 
-    def get(self, url, data=None):
-        return self.session.get(url=url, data=data, headers=self.headers, verify=False)
+    def get(self, url, params=None):
+        return self.session.get(url=url, params=params, headers=self.headers, verify=False)
 
     def save_image64(self):
         """保存验证图片"""
@@ -88,7 +94,7 @@ class Login:
             'rand': 'sjrand'
         }
         check_url = self.base_url + '/passport/captcha/captcha-check'
-        check_result = self.get(url=check_url, data=data).json()
+        check_result = self.get(url=check_url, params=data).json()
         if check_result['result_code'] == '4':
             logger.info('*' * 10 + '图片验证通过!!!' + '*' * 10)
         else:
@@ -103,16 +109,21 @@ class Login:
 
     def update_cookies(self):
         """更新cookie,否则登录不了"""
-        driver = webdriver.PhantomJS()
+        options = Options()
+        options.add_argument('--headless')
+        driver = webdriver.Chrome(chrome_options=options)
         driver.get('https://www.12306.cn')
-        # 等待1秒，留时间给浏览器跑js脚本，设置cookie
-        time.sleep(1)
+        # 等待2秒，留时间给浏览器跑js脚本，设置cookie
+        time.sleep(2)
         cookies = driver.get_cookies()
         for cookie in cookies:
             if cookie['name'] == 'RAIL_DEVICEID':
                 self.session.cookies.set('RAIL_DEVICEID', cookie['value'])
-        if self.session.cookies.get('RAIL_DEVICEID') is None:
+        rail_device_id = self.session.cookies.get('RAIL_DEVICEID')
+        if rail_device_id is None:
             logger.error('更新cookies失败!')
+        else:
+            logger.info(f'更新cookies成功（RAIL_DEVICEID：{ rail_device_id }）')
 
     def login(self, answer):
         """
@@ -128,7 +139,6 @@ class Login:
             'answer': answer
         }
         login_result = self.post(url=login_url, data=data)
-
         if login_result.status_code != 200:
             logger.error(f'很遗憾，登录失败了({login_result.status_code})...')
         try:
@@ -136,6 +146,8 @@ class Login:
             if res_json.get('result_message') == '登录成功':
                 self.session.cookies.set('uamtk', res_json.get('uamtk'))
                 logger.info('*' * 10 + '恭喜你，登录成功啦！' + '*' * 10)
+            else:
+                logger.error('登录失败，请检查账号密码是否正确！')
         except json.decoder.JSONDecodeError as e:
             logger.error(
                 f'登录接口没有返回json文件，检查cookies设置是否正确：{ self.session.cookies }')
@@ -171,9 +183,9 @@ class Login:
 
     def run(self):
         """主函数"""
+        self.update_cookies()
         self.save_image64()
         answer = self.check_image()
-        self.update_cookies()
         self.login(answer)
         app_tk = self.get_app_tk()
         self.auth_client(app_tk)
@@ -183,5 +195,5 @@ class Login:
 
 
 if __name__ == '__main__':
-    login = Login('', '')
+    login = Login(os.environ.get('USERNAME'), os.environ.get('PASSWORD'))
     login.run()
