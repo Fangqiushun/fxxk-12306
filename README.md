@@ -7,7 +7,8 @@ fxxk-12306
     │   ├── __init__.py
     │   ├── left_ticket.py      -- 余票查询类
     │   ├── logger.py           -- 日志类
-    │   └── login.py            -- 登录类
+    │   ├── login.py            -- 登录类
+    |   └── order.py            -- 下单类
     ├── config.py               -- 配置
     ├── Pipfile                 -- 依赖
     ├── Pipfile.lock

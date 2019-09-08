@@ -28,6 +28,7 @@ class Config:
         '是否当日达': 18,
         '是否能买': 11,
         '出发日期': 13,
+        '车站位置': 15,
         '商务座/特等座': 32,
         '一等座': 31,
         '二等座': 30,
@@ -48,7 +49,15 @@ class Config:
         'station_train_code': '车次',
         'from_station_telecode': '出发站',
         'to_station_telecode': '到达站',
-        'secret_str': '密码串'
+        'secret_str': '密码串',
+        'train_date': '出发日期',
+        'train_location': '车站位置',
+        'start_time': '出发时间',
+        'end_time': '到达时间',
+        'use_time': '历时',
+        'first_class_seat': '一等座',
+        'second_class_seat': '二等座',
+        'no_seat': '无座'
     }
 
     # 生成站点字典
@@ -72,7 +81,3 @@ class Config:
         '8': '260,120'
     }
 
-
-config = {
-    'base': Config
-}

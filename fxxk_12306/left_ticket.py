@@ -9,7 +9,7 @@ import json
 import requests
 import urllib3
 from prettytable import PrettyTable
-from config import config
+from config import Config
 from fxxk_12306.logger import Logger
 
 logger = Logger('leftTicket').get_logger()
@@ -34,11 +34,11 @@ class LeftTicket:
         self.purpose_codes = 'ADULT'
         self.base_url = 'https://kyfw.12306.cn/otn/leftTicket'
         self.train_date = train_date
-        self.from_station = config['base'].STATION_MAP.get(from_station)
-        self.to_station = config['base'].STATION_MAP.get(to_station)
-        self.ticket_infos_map = config['base'].TICKET_INFOS_MAP
-        self.left_ticket_map = config['base'].LEFT_TICKET_MAP
-        self.headers = config['base'].HEADERS
+        self.from_station = Config.STATION_MAP.get(from_station)
+        self.to_station = Config.STATION_MAP.get(to_station)
+        self.ticket_infos_map = Config.TICKET_INFOS_MAP
+        self.left_ticket_map = Config.LEFT_TICKET_MAP
+        self.headers = Config.HEADERS
         self.verify_station()
         self.session = session if session is not None else requests.Session()
 
@@ -49,9 +49,9 @@ class LeftTicket:
         return self.session.get(url=url, params=params, headers=self.headers, verify=False)
 
     def verify_station(self):
-        if self.from_station not in config['base'].STATION_MAP.values():
+        if self.from_station not in Config.STATION_MAP.values():
             logger.error('出发站不存在...')
-        if self.to_station not in config['base'].STATION_MAP.values():
+        if self.to_station not in Config.STATION_MAP.values():
             logger.error('到达站不存在...')
 
     def search_left_ticket(self):
@@ -100,7 +100,7 @@ class LeftTicket:
         :param ticket_infos_list: 余票信息列表
         :return:
         """
-        t = PrettyTable(config['base'].TICKET_INFOS_MAP.keys())
+        t = PrettyTable(Config.TICKET_INFOS_MAP.keys())
         for ticket_info in ticket_infos_list:
             t.add_row(ticket_info.values())
         logger.info(t)
@@ -117,9 +117,9 @@ class LeftTicket:
             if tds[self.ticket_infos_map['是否能买']] == 'Y':
                 left_row = {key: tds[self.ticket_infos_map[self.left_ticket_map[key]]]
                             for key in self.left_ticket_map}
-                left_row['from_station'] = config['base'].REVERSE_STATION_MAP.get(
+                left_row['from_station'] = Config.REVERSE_STATION_MAP.get(
                     left_row['from_station_telecode'])
-                left_row['to_station'] = config['base'].REVERSE_STATION_MAP.get(
+                left_row['to_station'] = Config.REVERSE_STATION_MAP.get(
                     left_row['to_station_telecode'])
                 left_tickets_list.append(left_row)
         return left_tickets_list
@@ -138,4 +138,5 @@ class LeftTicket:
 
 if __name__ == '__main__':
     fxxk = LeftTicket('2019-09-14', '广州', '普宁')
-    fxxk.run()
+    left_tickets_list = fxxk.run()
+    print(left_tickets_list)

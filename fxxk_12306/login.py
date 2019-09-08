@@ -5,6 +5,7 @@
 # @Email   : qiushun_fang@126.com
 
 import os
+import sys
 import time
 import json
 import base64
@@ -14,7 +15,7 @@ from PIL import Image
 from prettytable import PrettyTable
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from config import config
+from config import Config
 from fxxk_12306.logger import Logger
 
 logger = Logger('Login').get_logger()
@@ -39,10 +40,10 @@ class Login:
         self.username = username
         self.password = password
         self.base_url = 'https://kyfw.12306.cn'
-        self.headers = config['base'].HEADERS
+        self.headers = Config.HEADERS
         self.session = requests.Session()
         self.img_path = 'image.jpg'
-        self.image_answer = config['base'].IMAGE_ANSWER
+        self.image_answer = Config.IMAGE_ANSWER
 
     def post(self, url, data=None):
         return self.session.post(url=url, data=data, headers=self.headers, verify=False)
@@ -114,7 +115,7 @@ class Login:
         driver = webdriver.Chrome(chrome_options=options)
         driver.get('https://www.12306.cn')
         # 等待2秒，留时间给浏览器跑js脚本，设置cookie
-        time.sleep(2)
+        time.sleep(3)
         cookies = driver.get_cookies()
         for cookie in cookies:
             if cookie['name'] == 'RAIL_DEVICEID':
@@ -122,6 +123,12 @@ class Login:
         rail_device_id = self.session.cookies.get('RAIL_DEVICEID')
         if rail_device_id is None:
             logger.error('更新cookies失败!')
+            is_retry = input('是否重试（Y/N）？')
+            if is_retry.lower() == 'y':
+                self.update_cookies()
+            else:
+                logger.error('停止程序。。。')
+                sys.exit(0)
         else:
             logger.info(f'更新cookies成功（RAIL_DEVICEID：{ rail_device_id }）')
 

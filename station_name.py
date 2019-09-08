@@ -43,7 +43,6 @@ class StationName:
         """主函数"""
         content = self.download_station_js()
         self.parse_station_map(content)
-        print(self.station_map)
         self.save_station()
 
     def __repr__(self):
