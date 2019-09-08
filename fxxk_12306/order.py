@@ -35,16 +35,23 @@ class Order:
         session 会话窗口（需要传入登录后的会话窗口）
     """
 
-    def __init__(self, left_tickets_list, session=None):
+    def __init__(self, left_tickets_list, session=None, min_time=None, max_time=None, max_use_time=None):
         self.session = session if session is not None else requests.Session()
         self.left_tickets_list = left_tickets_list
         self.headers = Config.HEADERS
         self.base_url = 'https://kyfw.12306.cn/otn'
-        self.ticket = {}
+        self.min_time = min_time if min_time else '00:00'
+        self.max_time = max_time if max_time else '23:59'
+        self.max_use_time = max_use_time if max_use_time else '6:00'
+        self.ticket = self.select_ticket()
 
     def select_ticket(self):
         """根据策略选票"""
-        self.ticket = self.left_tickets_list[0]
+        for ticket in self.left_tickets_list:
+            if ticket['start_time'] >= self.min_time \
+                    and ticket['end_time'] <= self.max_time \
+                    and ticket['use_time'] <= self.max_use_time:
+                return ticket
 
     def post(self, url, data=None):
         return self.session.post(url=url, data=data, headers=self.headers, verify=False)
@@ -93,10 +100,10 @@ class Order:
             else:
                 logger.error(','.join(res_json.get(
                     'messages', ['无法获取下单token，原因不明'])))
-                sys.exit(0)
+                # sys.exit(0)
         except json.JSONDecodeError as e:
             logger.error('提交申请下单请求失败！')
-            sys.exit(0)
+            # sys.exit(0)
 
     def get_passenger_info(self, repeat_submit_token):
         """获取乘车人信息"""
@@ -112,24 +119,30 @@ class Order:
             return normal_passengers
         except:
             logger.error('获取乘车人信息失败！')
-            sys.exit(0)
+            # sys.exit(0)
 
     def generate_passenger_ticket(self, passenger):
         """生成乘车人信息拼接字符串"""
-        passenger_ticket = 'O,0,1,{passenger_name},{passenger_type},{passenger_id_no},{mobile_no},N,{all_enc_str}'\
-            .format(passenger_name=passenger['passenger_name'],
-                    passenger_type=passenger['passenger_type'],
-                    passenger_id_no=passenger['passenger_id_no'],
-                    mobile_no=passenger['mobile_no'],
-                    all_enc_str=passenger['allEncStr'])
+        if passenger:
+            passenger_ticket = 'O,0,1,{passenger_name},{passenger_type},{passenger_id_no},{mobile_no},N,{all_enc_str}'\
+                .format(passenger_name=passenger['passenger_name'],
+                        passenger_type=passenger['passenger_type'],
+                        passenger_id_no=passenger['passenger_id_no'],
+                        mobile_no=passenger['mobile_no'],
+                        all_enc_str=passenger['allEncStr'])
+        else:
+            passenger_ticket = ''
         return passenger_ticket
 
     def generate_old_passenger(self, passenger):
         """生成旧乘车人信息拼接字符串"""
-        old_passenger = '{passenger_name},{passenger_type},{passenger_id_no},1_'.format(
-            passenger_name=passenger['passenger_name'],
-            passenger_type=passenger['passenger_type'],
-            passenger_id_no=passenger['passenger_id_no'])
+        if passenger:
+            old_passenger = '{passenger_name},{passenger_type},{passenger_id_no},1_'.format(
+                passenger_name=passenger['passenger_name'],
+                passenger_type=passenger['passenger_type'],
+                passenger_id_no=passenger['passenger_id_no'])
+        else:
+            old_passenger = ''
         return old_passenger
 
     def get_pass_code(self):
@@ -163,12 +176,16 @@ class Order:
         }
         check_order_info_url = self.base_url + '/confirmPassenger/checkOrderInfo'
         check_order_info_res = self.post(url=check_order_info_url, data=data)
-        res_json = check_order_info_res.json()
-        if res_json['httpstatus'] == 200 \
-            and res_json['status'] == True \
-            and res_json['data'].get('submitStatus') == True:
-            return True
-        else:
+        try:
+            res_json = check_order_info_res.json()
+            if res_json['httpstatus'] == 200 \
+                    and res_json['status'] == True \
+                    and res_json['data'].get('submitStatus') == True:
+                return True
+            else:
+                return False
+        except json.decoder.JSONDecodeError as e:
+            logger.error('当前不能检查订单信息，请检查是否有余票（ticket）以及令牌（token）。')
             return False
 
     def confirm_single_for_queue(self, passenger, repeat_submit_token, key_check_is_change):
@@ -185,8 +202,8 @@ class Order:
             'randCode': '',
             'purpose_codes': '00',
             'key_check_isChange': key_check_is_change,
-            'leftTicketStr': self.ticket['left_ticket'],
-            'train_location': self.ticket['train_location'],
+            'leftTicketStr': self.ticket['left_ticket'] if self.ticket else '',
+            'train_location': self.ticket['train_location'] if self.ticket else '',
             'choose_seats': '',
             'seatDetailType': '000',
             'whatsSelect': '1',
@@ -198,39 +215,67 @@ class Order:
         confirm_single_for_queue_url = self.base_url + \
             '/confirmPassenger/confirmSingleForQueue'
 
-        confirm_single_for_queue_res = self.post(url=confirm_single_for_queue_url, data=data)
-        res_json = confirm_single_for_queue_res.json()
-        if res_json['httpstatus'] == 200 \
-            and res_json['status'] == True \
-            and res_json['data'].get('submitStatus') == True:
-            return True
-        else:
+        confirm_single_for_queue_res = self.post(
+            url=confirm_single_for_queue_url, data=data)
+        try:
+            res_json = confirm_single_for_queue_res.json()
+            if res_json['httpstatus'] == 200 \
+                    and res_json['status'] == True \
+                    and res_json['data'].get('submitStatus') == True:
+                return True
+            else:
+                return False
+        except json.decoder.JSONDecodeError as e:
+            logger.error('当前不能下单，请检查是否有余票（ticket）、令牌（token）以及关键值（key）。')
             return False
 
     def run(self):
-        self.select_ticket()
+        # self.select_ticket()
         res = self.submit_order_request()
         token_key = self.get_repeat_submit_token_key(res)
-        repeat_submit_token = token_key['repeat_submit_token']
-        key_check_is_change = token_key['key_check_is_change']
+        repeat_submit_token = token_key.get('repeat_submit_token', '') if token_key else ''
+        key_check_is_change = token_key.get('key_check_is_change', '') if token_key else ''
         passenger = self.get_passenger_info(repeat_submit_token)
         if self.check_order_info(passenger, repeat_submit_token):
             logger.info('检查订单信息成功了，下一步就下单了哦。。。')
-            # order = self.confirm_single_for_queue(passenger, repeat_submit_token, key_check_is_change)
-            # if order:
-            #     logger.info('恭喜你，下单成功了，请在30分钟内点击后面的链接支付哦！\n')
-            # else:
-            #     logger.error('很遗憾，下单失败了，请确认是否重新下单（Y/N，默认3秒后重新下单。）？')
+            order = self.confirm_single_for_queue(
+                passenger, repeat_submit_token, key_check_is_change)
+            if order:
+                logger.info('恭喜你，下单成功了，请在30分钟内点击后面的链接支付哦！\n')
+                return order
+            else:
+                logger.error('很遗憾，下单失败了。。。')
+                return False
         else:
-            logger.error('检查订单信息错误，请确认是否重新下单（Y/N，默认3秒后重新下单。）？')
+            logger.error('检查订单信息错误。。。')
+            return False
+
+
+def search_and_order(train_date, from_station, to_station, session, min_time=None, max_time=None, max_use_time=None):
+    from fxxk_12306.left_ticket import LeftTicket
+    fxxk = LeftTicket(train_date, from_station, to_station, session)
+    left_tickets_list = fxxk.run()
+    order = Order(left_tickets_list, session, min_time, max_time, max_use_time)
+    if order.ticket is not None:
+        return order.run()
+    else:
+        search_and_order(train_date, from_station, to_station, session)
 
 
 if __name__ == '__main__':
-    from fxxk_12306.left_ticket import LeftTicket
     from fxxk_12306.login import Login
-    fxxk = LeftTicket('2019-09-14', '广州', '普宁')
-    left_tickets_list = fxxk.run()
     login = Login(os.environ.get('USERNAME'), os.environ.get('PASSWORD'))
     login.run()
-    order = Order(left_tickets_list, login.session)
-    order.run()
+    train_date = '2019-10-07'
+    from_station = '汕头'
+    to_station = '广州东'
+    session = login.session
+    min_time = '12:00'
+    max_time = '15:00'
+    max_use_time = '04:00'
+    order_result = False
+    count = 0
+    while not order_result and count < 5:
+        order_result = search_and_order(
+            train_date, from_station, to_station, session, min_time, max_time, max_use_time)
+        count += 1

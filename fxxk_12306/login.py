@@ -158,6 +158,7 @@ class Login:
         except json.decoder.JSONDecodeError as e:
             logger.error(
                 f'登录接口没有返回json文件，检查cookies设置是否正确：{ self.session.cookies }')
+            # sys.exit(0)
 
     def get_app_tk(self):
         """获取app的token"""
