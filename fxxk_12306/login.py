@@ -22,6 +22,8 @@ from fxxk_12306.common import get, post
 logger = Logger('Login').get_logger()
 # 不展示不做验证请求接口的警告
 urllib3.disable_warnings()
+# 父级目录
+basedir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class Login:
@@ -107,9 +109,9 @@ class Login:
         options = Options()
         options.add_argument('--headless')
         if 'linux' in sys.platform:
-            chrome_path = '../chromedriver'
+            chrome_path = os.path.join(basedir, 'chromedriver')
         else:
-            chrome_path = '../chromedriver.exe'
+            chrome_path = os.path.join(basedir, 'chromedriver.exe')
         driver = webdriver.Chrome(chrome_path, chrome_options=options)
         driver.get('https://www.12306.cn')
         # 等待2秒，留时间给浏览器跑js脚本，设置cookie
@@ -156,7 +158,11 @@ class Login:
         except json.decoder.JSONDecodeError as e:
             logger.error(
                 f'登录接口没有返回json文件，检查cookies设置是否正确：{ self.session.cookies }')
-            # sys.exit(0)
+            is_retry = input('是否重试(Y/N)?')
+            if is_retry.lower() == 'y':
+                self.login(answer)
+            else:
+                sys.exit(0)
 
     def get_app_tk(self):
         """获取app的token"""
