@@ -80,3 +80,9 @@ class Config:
         '7': '180,120',
         '8': '260,120'
     }
+    MAIL_RECEIVERS = os.environ.get('MAIL_RECEIVERS', '').split(',')
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+
+    MAIL_SENDER = 'Fxxk-12306 <%s>' % MAIL_USERNAME
+

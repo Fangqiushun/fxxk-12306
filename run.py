@@ -115,6 +115,9 @@ def shell_order():
     while not order_result:
         order_result = search_and_order(
             train_date, from_station, to_station, session, min_time, max_time, max_use_time)
+        if order_result:
+            from fxxk_12306.send_email import send_successful_email
+            send_successful_email()
 
 
 shell_map = {

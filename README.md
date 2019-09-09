@@ -33,6 +33,10 @@ unzip chromedriver_linux64.zip
 
 ## 启动
 ```bash
+# 设置环境变量(需要先启用邮箱的SMTP服务,设置客户端授权码)
+export MAIL_RECEIVERS=<接收邮箱>
+export MAIL_USERNAME=<发送邮箱>             # hardcode只能使用126邮箱
+export MAIL_PASSWORD=<发送邮箱密码>
 # 查看帮助
 python run.py --help
 # 查询余票
