@@ -10,7 +10,7 @@ requests = "*"
 pillow = "*"
 prettytable = "*"
 fake-useragent = {index = "https://pypi.tuna.tsinghua.edu.cn/simple",version = "*"}
-selenium = "*"
+selenium = {index = "https://pypi.tuna.tsinghua.edu.cn/simple",version = "*"}
 
 [requires]
 python_version = "3.6"

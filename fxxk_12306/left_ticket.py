@@ -4,15 +4,15 @@
 # @Author  : Chilson
 # @Email   : qiushun_fang@126.com
 
-import datetime
 import json
 import requests
 import urllib3
 from prettytable import PrettyTable
 from config import Config
 from fxxk_12306.logger import Logger
+from fxxk_12306.common import get
 
-logger = Logger('leftTicket').get_logger()
+logger = Logger('LeftTicket').get_logger()
 # 不展示不做验证请求接口的警告
 urllib3.disable_warnings()
 
@@ -38,15 +38,8 @@ class LeftTicket:
         self.to_station = Config.STATION_MAP.get(to_station)
         self.ticket_infos_map = Config.TICKET_INFOS_MAP
         self.left_ticket_map = Config.LEFT_TICKET_MAP
-        self.headers = Config.HEADERS
         self.verify_station()
         self.session = session if session is not None else requests.Session()
-
-    def post(self, url, data=None):
-        return self.session.post(url=url, data=data, headers=self.headers, verify=False)
-
-    def get(self, url, params=None):
-        return self.session.get(url=url, params=params, headers=self.headers, verify=False)
 
     def verify_station(self):
         if self.from_station not in Config.STATION_MAP.values():
@@ -68,7 +61,7 @@ class LeftTicket:
             'leftTicketDTO.to_station': self.to_station,
             'purpose_codes': self.purpose_codes
         }
-        r = self.get(url=self.base_url + '/queryT', params=payload)
+        r = get(self.session, url=self.base_url + '/queryT', params=payload)
         if r.status_code == 200:
             try:
                 result = r.json().get('data', dict()).get('result')
@@ -137,6 +130,5 @@ class LeftTicket:
 
 
 if __name__ == '__main__':
-    fxxk = LeftTicket('2019-09-14', '广州', '普宁')
+    fxxk = LeftTicket('2019-10-01', '广州', '普宁')
     left_tickets_list = fxxk.run()
-    print(left_tickets_list)

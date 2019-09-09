@@ -17,6 +17,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from config import Config
 from fxxk_12306.logger import Logger
+from fxxk_12306.common import get, post
 
 logger = Logger('Login').get_logger()
 # 不展示不做验证请求接口的警告
@@ -40,22 +41,15 @@ class Login:
         self.username = username
         self.password = password
         self.base_url = 'https://kyfw.12306.cn'
-        self.headers = Config.HEADERS
         self.session = requests.Session()
         self.img_path = 'image.jpg'
         self.image_answer = Config.IMAGE_ANSWER
-
-    def post(self, url, data=None):
-        return self.session.post(url=url, data=data, headers=self.headers, verify=False)
-
-    def get(self, url, params=None):
-        return self.session.get(url=url, params=params, headers=self.headers, verify=False)
 
     def save_image64(self):
         """保存验证图片"""
         img_url = self.base_url + \
             '/passport/captcha/captcha-image64?login_site=E&module=login&rand=sjrand'
-        res = self.post(url=img_url).json()
+        res = post(self.session, url=img_url).json()
         img = base64.b64decode(res.get('image'))
 
         with open(self.img_path, 'wb') as f:
@@ -95,7 +89,7 @@ class Login:
             'rand': 'sjrand'
         }
         check_url = self.base_url + '/passport/captcha/captcha-check'
-        check_result = self.get(url=check_url, params=data).json()
+        check_result = get(self.session, url=check_url, params=data).json()
         if check_result['result_code'] == '4':
             logger.info('*' * 10 + '图片验证通过!!!' + '*' * 10)
         else:
@@ -112,7 +106,11 @@ class Login:
         """更新cookie,否则登录不了"""
         options = Options()
         options.add_argument('--headless')
-        driver = webdriver.Chrome(chrome_options=options)
+        if 'linux' in sys.platform:
+            chrome_path = '../chromedriver'
+        else:
+            chrome_path = '../chromedriver.exe'
+        driver = webdriver.Chrome(chrome_path, chrome_options=options)
         driver.get('https://www.12306.cn')
         # 等待2秒，留时间给浏览器跑js脚本，设置cookie
         time.sleep(3)
@@ -145,7 +143,7 @@ class Login:
             'appid': 'otn',
             'answer': answer
         }
-        login_result = self.post(url=login_url, data=data)
+        login_result = post(self.session, url=login_url, data=data)
         if login_result.status_code != 200:
             logger.error(f'很遗憾，登录失败了({login_result.status_code})...')
         try:
@@ -163,7 +161,11 @@ class Login:
     def get_app_tk(self):
         """获取app的token"""
         data = {'appid': 'otn'}
-        res = self.post(self.base_url + '/passport/web/auth/uamtk', data=data)
+        res = post(
+            self.session,
+            self.base_url +
+            '/passport/web/auth/uamtk',
+            data=data)
         if res.status_code == 200:
             res_json = res.json()
             if res_json.get('result_code') == 0:
@@ -177,7 +179,11 @@ class Login:
         :return:
         """
         data = {'tk': app_tk}
-        res = self.post(self.base_url + '/otn/uamauthclient', data=data)
+        res = post(
+            self.session,
+            self.base_url +
+            '/otn/uamauthclient',
+            data=data)
         if res.status_code == 200:
             res_json = res.json()
             if res_json.get('result_code') == 0:

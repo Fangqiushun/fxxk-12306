@@ -5,34 +5,44 @@ fxxk-12306
 ## 目录结构
     ├── fxxk_12306              -- 主要功能入口
     │   ├── __init__.py
+    |   ├── common.py           -- 通用方法
     │   ├── left_ticket.py      -- 余票查询类
     │   ├── logger.py           -- 日志类
     │   ├── login.py            -- 登录类
     |   └── order.py            -- 下单类
+    ├── chromedriver            -- 谷歌浏览器驱动(linux, window要下载chromedriver.exe)
     ├── config.py               -- 配置
     ├── Pipfile                 -- 依赖
     ├── Pipfile.lock
-    ├── README.md
+    ├── README.md               -- 说明文档
     ├── run.py                  -- 启动脚本
     ├── station_name.py         -- 获取车站中英对应字典
     └── station.pk              -- 车站中英对应字典
+    
 
 ## 安装
 ```bash
+# 安装依赖
 pip install pipenv
 pipenv install
+# 安装模拟浏览器驱动
+wget http://npm.taobao.org/mirrors/chromedriver/2.41/chromedriver_linux64.zip
+unzip chromedriver_linux64.zip
 ```
+
 
 ## 启动
 ```bash
 # 查看帮助
 python run.py --help
 # 查询余票
-python run.py --search_ticket <乘车日期> <出发站> <到达站>
+python run.py --search_ticket
 # 登录
-python run.py --login <账号> <密码>
+python run.py --login
+# 下单
+python run.py --order
 ```
 
 ## TODO
-1. 自助下单
-2. 多线程
+1. 使用ip池定时切换ip,减少被封的机率
+2. 多线程,提高抢票速度
