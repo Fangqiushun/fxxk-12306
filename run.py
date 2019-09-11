@@ -5,6 +5,7 @@
 # @Email   : qiushun_fang@126.com
 
 import sys
+import time
 from config import Config
 from fxxk_12306.logger import Logger
 
@@ -118,6 +119,7 @@ def shell_order():
         if order_result:
             from fxxk_12306.send_email import send_successful_email
             send_successful_email()
+        time.sleep(0.01)
 
 
 shell_map = {

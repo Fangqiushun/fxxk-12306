@@ -60,6 +60,9 @@ class Config:
         'no_seat': '无座'
     }
 
+    # 余票查询接口尾号字母
+    CODE = 'A'
+
     # 生成站点字典
     with open(os.path.join(basedir, 'station.pk'), 'rb') as f:
         STATION_MAP = pickle.load(f)

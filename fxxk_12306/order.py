@@ -232,7 +232,6 @@ class Order:
             return False
 
     def run(self):
-        # self.select_ticket()
         res = self.submit_order_request()
         token_key = self.get_repeat_submit_token_key(res)
         repeat_submit_token = token_key.get(

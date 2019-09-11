@@ -106,31 +106,33 @@ class Login:
 
     def update_cookies(self):
         """更新cookie,否则登录不了"""
-        options = Options()
-        options.add_argument('--headless')
-        if 'linux' in sys.platform:
-            chrome_path = os.path.join(basedir, 'chromedriver')
-        else:
-            chrome_path = os.path.join(basedir, 'chromedriver.exe')
-        driver = webdriver.Chrome(chrome_path, chrome_options=options)
-        driver.get('https://www.12306.cn')
-        # 等待2秒，留时间给浏览器跑js脚本，设置cookie
-        time.sleep(3)
-        cookies = driver.get_cookies()
-        for cookie in cookies:
-            if cookie['name'] == 'RAIL_DEVICEID':
-                self.session.cookies.set('RAIL_DEVICEID', cookie['value'])
-        rail_device_id = self.session.cookies.get('RAIL_DEVICEID')
-        if rail_device_id is None:
-            logger.error('更新cookies失败!')
-            is_retry = input('是否重试（Y/N）？')
-            if is_retry.lower() == 'y':
-                self.update_cookies()
-            else:
-                logger.error('停止程序。。。')
-                sys.exit(0)
-        else:
-            logger.info(f'更新cookies成功（RAIL_DEVICEID：{ rail_device_id }）')
+        rail_device_id = input('请输入当前的设备ID(RAIL_DEVICEID):')
+        self.session.cookies.set('RAIL_DEVICEID', rail_device_id)
+        # options = Options()
+        # options.add_argument('--headless')
+        # if 'linux' in sys.platform:
+        #     chrome_path = os.path.join(basedir, 'chromedriver')
+        # else:
+        #     chrome_path = os.path.join(basedir, 'chromedriver.exe')
+        # driver = webdriver.Chrome(chrome_path, chrome_options=options)
+        # driver.get('https://www.12306.cn')
+        # # 等待2秒，留时间给浏览器跑js脚本，设置cookie
+        # time.sleep(3)
+        # cookies = driver.get_cookies()
+        # for cookie in cookies:
+        #     if cookie['name'] == 'RAIL_DEVICEID':
+        #         self.session.cookies.set('RAIL_DEVICEID', cookie['value'])
+        # rail_device_id = self.session.cookies.get('RAIL_DEVICEID')
+        # if rail_device_id is None:
+        #     logger.error('更新cookies失败!')
+        #     is_retry = input('是否重试（Y/N）？')
+        #     if is_retry.lower() == 'y':
+        #         self.update_cookies()
+        #     else:
+        #         logger.error('停止程序。。。')
+        #         sys.exit(0)
+        # else:
+        #     logger.info(f'更新cookies成功（RAIL_DEVICEID：{ rail_device_id }）')
 
     def login(self, answer):
         """

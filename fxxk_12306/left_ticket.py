@@ -61,7 +61,7 @@ class LeftTicket:
             'leftTicketDTO.to_station': self.to_station,
             'purpose_codes': self.purpose_codes
         }
-        r = get(self.session, url=self.base_url + '/queryT', params=payload)
+        r = get(self.session, url=self.base_url + '/query' + Config.CODE, params=payload)
         if r.status_code == 200:
             try:
                 result = r.json().get('data', dict()).get('result')
